@@ -73,7 +73,7 @@
         {    
             var canvas = document.getElementById("webGL-canvas");
             canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+            canvas.height = window.innerHeight - 20;
 
             try {
                 gl = canvas.getContext("experimental-webgl");
@@ -295,7 +295,7 @@
             }
             if (input.mouseButtons[1] == ButtonState.PRESSED) {
                 camera.position[0] -= input.mousedx * time.deltaSeconds;
-                caemra.position[1] += input.mousedy * time.deltaSeconds;
+                camera.position[1] += input.mousedy * time.deltaSeconds;
             }
 
             for (var i = 0; i < 300; ++i) {
