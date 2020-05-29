@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>WebGL Application</title>
     <meta charset="utf-8">
@@ -18,15 +19,15 @@
             gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
         }
     </script>
-    
+
     <script id="shader-fs" type="x-shader/x-fragment">
         precision mediump float;
 
         void main(void) {
-            gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);
+            gl_FragColor = vec4(1.0, 0.0, 0.7, 1.0);
         }
     </script>
-    
+
     <script type="text/javascript">
 
         // Global variables
@@ -35,19 +36,19 @@
         var entities = [];
         var camera = {};
         var input = {
-            keys : [],
-            mouseButtons : [],
-            mousex : 0,
-            mousey : 0,
-            mousedx : 0,
-            mousedy : 0,
-            lastMouseX : 0,
-            lastMouseY : 0
+            keys: [],
+            mouseButtons: [],
+            mousex: 0,
+            mousey: 0,
+            mousedx: 0,
+            mousedy: 0,
+            lastMouseX: 0,
+            lastMouseY: 0
         }
 
         var time = {
-            deltaSeconds : 1.0/60.0,
-            lastTimeMillis : 0
+            deltaSeconds: 1.0 / 60.0,
+            lastTimeMillis: 0
         };
 
         const ButtonState = {
@@ -63,10 +64,9 @@
         function radians(deg) { return PI * deg / 180.0; }
         function degrees(rad) { return 180.0 * rad / PI; }
         function mod(value1, value2) { return value1 % value2; }
-        function clamp(value, min, max) { return (value < min) ? min :(value > max ? max : value); } 
+        function clamp(value, min, max) { return (value < min) ? min : (value > max ? max : value); }
 
-        function initGL(canvas)
-        {    
+        function initGL(canvas) {
             var canvas = document.getElementById("webGL-canvas");
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight - 20;
@@ -83,8 +83,7 @@
         }
 
 
-        function getShader(id)
-        {
+        function getShader(id) {
             var shaderScript = document.getElementById(id);
             if (!shaderScript) {
                 return null;
@@ -120,8 +119,7 @@
         }
 
 
-        function initShaders()
-        {
+        function initShaders() {
             var fragmentShader = getShader("shader-fs");
             var vertexShader = getShader("shader-vs");
 
@@ -143,9 +141,49 @@
             resources.shaderProgram.mvMatrixUniform = gl.getUniformLocation(resources.shaderProgram, "uMVMatrix");
         }
 
-        
-        function loadSceneOnGPU()
-        {
+        function loadModelOnGPU(model, modelData) {
+            model.normalBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, model.normalBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(modelData.vertexNormals), gl.STATIC_DRAW);
+            model.normalBuffer.itemSize = 3;
+
+            model.texCoorBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, model.texCoorBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(modelData.vertexTextureCoords), gl.STATIC_DRAW);
+            model.texCoorBuffer.itemSize = 3;
+
+            model.positionBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, model.positionBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(modelData.vertexPositions), gl.STATIC_DRAW);
+            model.positionBuffer.itemSize = 3;
+
+            model.indexBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, model.indexBuffer);
+            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(modelData.indices), gl.STATIC_DRAW);
+            model.indexBuffer.itemSize = 1;
+            model.indexBuffer.numItems = modelData.indices.length;
+        }
+
+        function requestModel(filename) {
+            var model = {};
+            var request = new XMLHttpRequest();
+            request.open("GET", filename);
+            request.onreadystatechange = function () {
+                if (request.readyState == 4) {
+                    var parsedJson = JSON.parse(request.responseText);
+                    loadModelOnGPU(model, parsedJson);
+                }
+            }
+            request.send();
+            return model;
+        }
+
+        function InitModels() {
+            resources.modelTeapot = requestModel("Data/Teapot.json");
+            resources.modelLaptop = requestModel("Data/Laptop.json");
+        }
+
+        function loadSceneOnGPU() {
             var vertices = [
                 -1.0, -1.0, 0.0,
                 1.0, -1.0, 0.0,
@@ -163,15 +201,14 @@
         }
 
 
-        function drawScene()
-        {
+        function drawScene() {
             gl.enable(gl.DEPTH_TEST);
 
             gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
 
             gl.clearColor(0.0, 0.0, 0.0, 1.0);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-            
+
             // Projection
             var pMatrix = mat4.create();
             mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, pMatrix);
@@ -188,12 +225,18 @@
             for (var i = 0; i < entities.length; ++i) {
                 var entity = entities[i];
 
-                gl.bindBuffer(gl.ARRAY_BUFFER, entity.mesh.positionBuffer);
+                if (entity.model.indexBuffer == null) continue;
+
+                gl.bindBuffer(gl.ARRAY_BUFFER, entity.model.positionBuffer);
+
                 gl.vertexAttribPointer(resources.shaderProgram.vertexPositionAttribute,
-                    entity.mesh.positionBuffer.itemSize,
+                    entity.model.positionBuffer.itemSize,
                     gl.FLOAT,
                     false,
                     0, 0);
+
+
+                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, entity.model.indexBuffer);
 
                 // Model Matrix
                 var modelMatrix = mat4.create();
@@ -208,40 +251,34 @@
                 var modelViewMatrix = mat4.multiply(viewMatrix, modelMatrix, mat4.create());
                 gl.uniformMatrix4fv(resources.shaderProgram.mvMatrixUniform, false, modelViewMatrix);
 
-                gl.drawArrays(gl.TRIANGLES, 0, entity.mesh.positionBuffer.numItems);
+                gl.drawElements(gl.TRIANGLES, entity.model.indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
             }
         }
 
-        function initTime()
-        {
+        function initTime() {
             var date = new Date();
             time.lastTimeMillis = date.getTime();
         }
 
-        function handleKeyDown(event)
-        {
+        function handleKeyDown(event) {
             input.keys[event.keyCode] = ButtonState.DOWN;
         }
 
-        function handleKeyUp(event)
-        {
+        function handleKeyUp(event) {
             input.keys[event.keyCode] = ButtonState.UP;
         }
 
-        function handleMouseDown(event)
-        {
+        function handleMouseDown(event) {
             input.mouseButtons[event.button] = ButtonState.DOWN;
             input.lastMouseX = event.clientX;
             input.lastMouseY = event.clientY;
         }
-        
-        function handleMouseUp(event)
-        {
+
+        function handleMouseUp(event) {
             input.mouseButtons[event.button] = ButtonState.UP;
         }
 
-        function handleMouseMove(event) 
-        {
+        function handleMouseMove(event) {
             var mousex = event.clientX;
             var mousey = event.clientY;
             input.mousedx = mousex - input.lastMouseX;
@@ -250,13 +287,11 @@
             input.lastMouseY = mousey;
         }
 
-        function handleMouseWheel(event) 
-        {
+        function handleMouseWheel(event) {
             camera.position[2] += event.deltaY * time.deltaSeconds;
         }
-        
-        function initInput()
-        {
+
+        function initInput() {
             for (var i = 0; i < 300; ++i) {
                 input.keys[i] = ButtonState.IDLE;
             }
@@ -272,8 +307,7 @@
             document.onwheel = handleMouseWheel;
         }
 
-        function processInputEvents()
-        {
+        function processInputEvents() {
             var speed = 20.0;
 
             if (input.keys[87] == ButtonState.PRESSED) { // W
@@ -306,7 +340,7 @@
             for (var i = 0; i < 300; ++i) {
                 if (input.keys[i] == ButtonState.DOWN) input.keys[i] = ButtonState.PRESSED;
                 if (input.keys[i] == ButtonState.UP) input.keys[i] = ButtonState.IDLE;
-            }   
+            }
             for (var i = 0; i < 300; ++i) {
                 if (input.mouseButtons[i] == ButtonState.DOWN) input.mouseButtons[i] = ButtonState.PRESSED;
                 if (input.mouseButtons[i] == ButtonState.UP) input.mouseButtons[i] = ButtonState.IDLE;
@@ -315,8 +349,7 @@
             input.mousedy = 0;
         }
 
-        function Update()
-        {
+        function Update() {
             var date = new Date();
             var tm = date.getTime();
             time.deltaSeconds = (tm - time.lastTimeMillis) / 1000.0;
@@ -327,33 +360,37 @@
             drawScene();
         }
 
-        function initScene()
-        {
+        function initScene() {
+            var entity = {};
+            entity.transform = {};
+            entity.transform.position = [-2.0, 0.0, 0.0];
+            entity.transform.rotation = [0.0, 0.0, 0.0];
+            entity.transform.scale = [0.1, 0.1, 0.1];
+            entity.model = resources.modelTeapot;
+            entities.push(entity);
+
             entity = {};
             entity.transform = {};
-            entity.transform.position = [2.0, 0.0, 0.0];
-            entity.transform.rotation = [0.0, 0.0, PI];
-            entity.transform.scale = [1.0, 1.0, 1.0];
-            entity.mesh = {};
-            entity.mesh.positionBuffer = resources.quadVertexPositionBuffer;
+            entity.transform.position = [2.0, -0.7, 0.0];
+            entity.transform.rotation = [-HALFPI, 0.0, 0.0];
+            entity.transform.scale = [1.5, 1.5, 1.5];
+            entity.model = resources.modelLaptop;
             entities.push(entity);
         }
 
-        function initCamera()
-        {
+        function initCamera() {
             camera.position = [0.0, 0.0, 10.0];
             camera.yaw = 0.0;
             camera.pitch = 0.0;
         }
 
-        function webGLStart()
-        {
+        function webGLStart() {
             initGL();
             initCamera();
             initTime();
             initInput();
             initShaders();
-            loadSceneOnGPU();
+            InitModels();
             initScene();
 
             Update();
@@ -364,7 +401,7 @@
 </head>
 
 <body onload="webGLStart();" onresize="webGLStart();">
-    <canvas id="webGL-canvas" style="border: none; width:100%; height:100%; margin: 0 auto;"></canvas>    
+    <canvas id="webGL-canvas" style="border: none; width:100%; height:100%; margin: 0 auto;"></canvas>
 </body>
 
 </html>
