@@ -254,6 +254,11 @@
             input.lastMouseY = mousey;
         }
 
+        function handleMouseWheel(event) 
+        {
+            camera.position[2] += event.deltaY * time.deltaSeconds;
+        }
+        
         function initInput()
         {
             for (var i = 0; i < 300; ++i) {
@@ -268,6 +273,7 @@
             document.onmousedown = handleMouseDown;
             document.onmouseup = handleMouseUp;
             document.onmousemove = handleMouseMove;
+            document.onwheel = handleMouseWheel;
         }
 
         function processInputEvents()
