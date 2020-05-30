@@ -22,7 +22,7 @@
 
         void main(void) {
 
-            vLightDir = mat3(uVMatrix) * vec3(0.0, 1.0, 0.0);
+            vLightDir = mat3(uVMatrix) * vec3(-0.75, 1.0, 0.0);
 
             vNormal = mat3(uMVMatrix) * aVertexNormal;
             gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
@@ -54,6 +54,10 @@
             // Diffuse
             float diffuseIntensity = max(0.0, dot(N, L));
             totalColor += albedo * lightColor * diffuseIntensity;
+
+            // Specular
+            float specularIntensity = pow( max( dot(N, L), 0.0), 32.0);
+            totalColor += lightColor * specularIntensity;
 
             gl_FragColor = vec4(1.0, 0.0, 0.7, 1.0);
             gl_FragColor = vec4(N, 1.0);
