@@ -11,11 +11,20 @@
 
     <script id="shader-vs" type="x-shader/x-vertex">
         attribute vec3 aVertexPosition;
+        attribute vec3 aVertexNormal;
 
         uniform mat4 uMVMatrix;
+        uniform mat4 uVMatrix;
         uniform mat4 uPMatrix;
 
+        varying vec3 vLightDir;
+        varying vec3 vNormal;
+
         void main(void) {
+
+            vLightDir = mat3(uVMatrix) * vec3(0.0, 1.0, 0.0);
+
+            vNormal = mat3(uMVMatrix) * aVertexNormal;
             gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
         }
     </script>
@@ -23,8 +32,32 @@
     <script id="shader-fs" type="x-shader/x-fragment">
         precision mediump float;
 
+        varying vec3 vLightDir;
+        varying vec3 vNormal;
+
         void main(void) {
+
+            vec3 N = normalize(vNormal);
+            vec3 L = normalize(vLightDir);
+
+            vec3 totalColor = vec3(0.0);
+
+            // Hardcoded Material
+            vec3 albedo = vec3(1.0, 0.0, 0.7);
+
+            // Hardcoded Light
+            vec3 lightColor = vec3(1.0);
+
+            // Ambient
+            totalColor += albedo * 0.5;
+
+            // Diffuse
+            float diffuseIntensity = max(0.0, dot(N, L));
+            totalColor += albedo * lightColor * diffuseIntensity;
+
             gl_FragColor = vec4(1.0, 0.0, 0.7, 1.0);
+            gl_FragColor = vec4(N, 1.0);
+            gl_FragColor = vec4(totalColor, 1.0);
         }
     </script>
 
@@ -137,8 +170,12 @@
             resources.shaderProgram.vertexPositionAttribute = gl.getAttribLocation(resources.shaderProgram, "aVertexPosition");
             gl.enableVertexAttribArray(resources.shaderProgram.vertexPositionAttribute);
 
+            resources.shaderProgram.vertexNormalAttribute = gl.getAttribLocation(resources.shaderProgram, "aVertexNormal");
+            gl.enableVertexAttribArray(resources.shaderProgram.vertexNormalAttribute);
+
             resources.shaderProgram.pMatrixUniform = gl.getUniformLocation(resources.shaderProgram, "uPMatrix");
             resources.shaderProgram.mvMatrixUniform = gl.getUniformLocation(resources.shaderProgram, "uMVMatrix");
+            resources.shaderProgram.vMatrixUniform = gl.getUniformLocation(resources.shaderProgram, "uVMatrix");
         }
 
         function loadModelOnGPU(model, modelData) {
@@ -183,24 +220,6 @@
             resources.modelLaptop = requestModel("Data/Laptop.json");
         }
 
-        function loadSceneOnGPU() {
-            var vertices = [
-                -1.0, -1.0, 0.0,
-                1.0, -1.0, 0.0,
-                1.0, 1.0, 0.0,
-                -1.0, -1.0, 0.0,
-                1.0, 1.0, 0.0,
-                -1.0, 1.0, 0.0
-            ];
-
-            resources.quadVertexPositionBuffer = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, resources.quadVertexPositionBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-            resources.quadVertexPositionBuffer.itemSize = 3;
-            resources.quadVertexPositionBuffer.numItems = 6;
-        }
-
-
         function drawScene() {
             gl.enable(gl.DEPTH_TEST);
 
@@ -221,6 +240,7 @@
             mat4.translate(viewMatrix, vec3.negate(camPos));
             mat4.rotate(viewMatrix, camera.pitch, [1.0, 0.0, 0.0]);
             mat4.rotate(viewMatrix, camera.yaw, [0.0, 1.0, 0.0]);
+            gl.uniformMatrix4fv(resources.shaderProgram.vMatrixUniform, false, viewMatrix);
 
             for (var i = 0; i < entities.length; ++i) {
                 var entity = entities[i];
@@ -228,13 +248,18 @@
                 if (entity.model.indexBuffer == null) continue;
 
                 gl.bindBuffer(gl.ARRAY_BUFFER, entity.model.positionBuffer);
-
                 gl.vertexAttribPointer(resources.shaderProgram.vertexPositionAttribute,
                     entity.model.positionBuffer.itemSize,
                     gl.FLOAT,
                     false,
                     0, 0);
 
+                gl.bindBuffer(gl.ARRAY_BUFFER, entity.model.normalBuffer);
+                gl.vertexAttribPointer(resources.shaderProgram.vertexNormalAttribute,
+                    entity.model.normalBuffer.itemSize,
+                    gl.FLOAT,
+                    false,
+                    0, 0);
 
                 gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, entity.model.indexBuffer);
 
