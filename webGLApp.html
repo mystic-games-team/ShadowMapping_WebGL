@@ -404,8 +404,10 @@
                 mat4.rotate(modelMatrix, entity.transform.rotation[2], [0.0, 0.0, 1.0]);
                 mat4.scale(modelMatrix, entity.transform.scale);
 
-                var modelviewMatrix= mat4.multiply(viewMatrix, modelMatrix, mat4.create());
-                gl.uniformMatrix4fv(resources.programCamera.mvMatrixUniform, false, modelviewMatrix);
+                if (shader == resources.programCamera) {
+                    var modelviewMatrix= mat4.multiply(viewMatrix, modelMatrix, mat4.create());
+                    gl.uniformMatrix4fv(resources.programCamera.mvMatrixUniform, false, modelviewMatrix);
+                }
 
                 var MVMatrixLight = mat4.multiply(lightView, modelMatrix, mat4.create());
                 gl.uniformMatrix4fv(shader.uMVMatrixLight, false, MVMatrixLight);
