@@ -276,9 +276,18 @@
 
             gl.enableVertexAttribArray(resources.programLight.vertexPositionAttribute);
 
+            // Projection
+            var pMatrix = mat4.create();
+            mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, pMatrixLight);
+            gl.uniformMatrix4fv(resources.programLight.pMatrixUniform, false, pMatrixLight);
+
+            // View
             var viewMatrix = mat4.create();
-            // all
-            
+            mat4.identity(viewMatrix);
+            var lightPos = vec3.create(resources.programLight.position);
+            mat4.translate(viewMatrix, vec3.negate(lightPos));
+            mat4.rotate(viewMatrix, resources.programLight.vLightDir, [1.0, 1.0, 1.0]);
+            gl.uniformMatrix4fv(resources.programLight.vMatrixUniform, false, viewMatrix);
 
             Draw(viewMatrix);
 
