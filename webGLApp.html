@@ -240,7 +240,6 @@
             resources.programLight = loadShader("light");
 
             resources.programLight.vertexPositionAttribute = gl.getAttribLocation(resources.programLight, "aVertexPosition");
-            gl.enableVertexAttribArray(resources.programLight.vertexPositionAttribute);
 
             resources.programLight.mvMatrixUniform = gl.getUniformLocation(resources.programLight, "uMVMatrix");
             resources.programLight.pMatrixLight = gl.getUniformLocation(resources.programLight, "projectionMatrixLight");
@@ -316,7 +315,7 @@
             gl.bindFramebuffer(gl.FRAMEBUFFER, rttFramebuffer);
 
             gl.viewport(0, 0, rttFramebuffer.width, rttFramebuffer.height);
-            gl.clearColor(0.0, 0.0, 0.0, 1.0);
+            gl.clearColor(1.0, 0.0, 0.0, 1.0);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
             gl.useProgram(resources.programLight);
@@ -331,7 +330,7 @@
             // View
             lightView = mat4.create();
             mat4.identity(lightView);
-            //mat4.translate(lightView, vec3.negate(lightPosition));
+            mat4.translate(lightView, vec3.negate(lightPosition));
 
             Draw(lightView, resources.programLight);
 
@@ -348,6 +347,8 @@
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
             gl.useProgram(resources.programCamera);
+            gl.enableVertexAttribArray(resources.programCamera.vertexNormalAttribute);
+            gl.enableVertexAttribArray(resources.programCamera.vertexPositionAttribute);
 
             // Projection
             var pMatrix = mat4.create();
@@ -373,6 +374,9 @@
 
             Draw(viewMatrix, resources.programCamera);
 
+
+            gl.disableVertexAttribArray(resources.programCamera.vertexPositionAttribute);
+            gl.disableVertexAttribArray(resources.programCamera.vertexNormalAttribute);
             gl.bindTexture(gl.TEXTURE_2D, null);
         }
 
