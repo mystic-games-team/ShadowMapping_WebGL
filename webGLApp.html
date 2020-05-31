@@ -71,7 +71,7 @@
         varying vec3 vNormal;
 
         uniform sampler2D lightDepth;
-
+        uniform vec3 color;
         varying vec4 positionProjectedLightspace;
 
         float decodeFloat(vec4 color){
@@ -85,7 +85,7 @@
             vec3 L = normalize(vLightDir);
 
             // Hardcoded Material
-            vec3 albedo = vec3(1.0, 0.0, 0.7);
+            vec3 albedo = color;
 
             // Hardcoded Light
             vec3 lightColor = vec3(1.0);
@@ -229,6 +229,7 @@
             resources.programCamera.uPMatrixLight = gl.getUniformLocation(resources.programCamera, "uPMatrixLight");
             resources.programCamera.uMVMatrixLight = gl.getUniformLocation(resources.programCamera, "uMVMatrixLight");
             resources.programCamera.lightDepth = gl.getUniformLocation(resources.programCamera, "lightDepth");
+            resources.programCamera.color = gl.getUniformLocation(resources.programCamera, "color");
             resources.programCamera.lightPosition = gl.getUniformLocation(resources.programCamera, "lightPosition");
 
             resources.programLight = loadShader("light");
@@ -407,6 +408,7 @@
                 if (shader == resources.programCamera) {
                     var modelviewMatrix= mat4.multiply(viewMatrix, modelMatrix, mat4.create());
                     gl.uniformMatrix4fv(resources.programCamera.mvMatrixUniform, false, modelviewMatrix);
+                    gl.uniform3fv(resources.programCamera.color, entity.color);
                 }
 
                 var MVMatrixLight = mat4.multiply(lightView, modelMatrix, mat4.create());
@@ -546,6 +548,7 @@
             entity.transform.position = [-2.0, 0.85, 0.0];
             entity.transform.rotation = [0.0, 0.0, 0.0];
             entity.transform.scale = [0.1, 0.1, 0.1];
+            entity.color = vec3.create([1.0, 0.0, 0.7]);
             entity.model = resources.modelTeapot;
             entities.push(entity);
 
@@ -554,6 +557,7 @@
             entity.transform.position = [2.0, 0.075, 0.0];
             entity.transform.rotation = [-HALFPI, 0.0, 0.0];
             entity.transform.scale = [1.5, 1.5, 1.5];
+            entity.color = vec3.create([1.0, 0.5, 0.2]);
             entity.model = resources.modelLaptop;
             entities.push(entity);
 
@@ -562,6 +566,7 @@
             entity.transform.position = [0.0, -1.0, 0.0];
             entity.transform.rotation = [0.0, PI, 0.0];
             entity.transform.scale = [8.0, 8.0, 8.0];
+            entity.color = vec3.create([0.3, 0.3, 1.0]);
             entity.model = resources.floor;
             entities.push(entity);
         }
