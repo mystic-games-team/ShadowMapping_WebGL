@@ -11,17 +11,30 @@
 
     <script id="light-vs" type="x-shader/x-vertex">
 
-        void main(void) {
+        attribute vec3 aVertexPosition;
 
-           
+        uniform mat4 modelViewMatrixLight;
+        uniform mat4 projectionMatrixLight;
+
+        void main(void) {
+            gl_Position = projectionMatrixLight * modelViewMatrixLight * vec4(aVertexPosition, 1.0);
         }
     </script>
 
     <script id="light-fs" type="x-shader/x-fragment">
 
-        void main(void) {
+        precision mediump float;
 
-            
+        vec4 encodeFloat (float depth) {
+            const vec4 bitShift = vec4(256 * 256 * 256, 256 * 256, 256, 1.0);
+            const vec4 bitMask = vec4(0, 1.0/256.0, 1.0/256.0, 1.0/256.0);
+            vec4 comp = fract(depth * bitShift);
+            comp -= comp.xxyz * bitMask;
+            return comp;
+        }
+
+        void main(void) {
+            gl_FragColor = encodeFloat(gl_FragCoord.z);
         }
     </script>
     
@@ -35,6 +48,11 @@
 
         varying vec3 vLightDir;
         varying vec3 vNormal;
+        
+        uniform mat4 modelViewMatrixLight;
+        uniform mat4 projectionMatrixLight;
+
+        varying vec4 positionProjectedLightspace;
 
         void main(void) {
 
@@ -42,6 +60,8 @@
 
             vNormal = mat3(uMVMatrix) * aVertexNormal;
             gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+
+            positionProjectedLightspace = projectionMatrixLight * modelViewMatrixLight * vec4(aVertexPosition, 1.0);
         }
     </script>
 
@@ -50,6 +70,15 @@
 
         varying vec3 vLightDir;
         varying vec3 vNormal;
+
+        uniform sampler2D lightDepth;
+
+        varying vec4 positionProjectedLightspace;
+
+        float decodeFloat(vec4 color) {
+            const vec4 bitShift = vec4(1.0 / (256.0 * 256.0 * 256.0), 1.0 / (256.0 * 256.0), 1.0 * 256.0, 1.0);
+            return dot(color, bitShift);
+        }
 
         void main(void) {
 
@@ -64,20 +93,34 @@
             // Hardcoded Light
             vec3 lightColor = vec3(1.0);
 
+            vec3 ambient;
+            vec3 diffuse;
+            vec3 specular;
+
             // Ambient
-            totalColor += albedo * 0.5;
+            ambient = albedo * 0.5;
 
             // Diffuse
             float diffuseIntensity = max(0.0, dot(N, L));
-            totalColor += albedo * lightColor * diffuseIntensity;
+            diffuse = albedo * lightColor * diffuseIntensity;
 
             // Specular
             float specularIntensity = pow( max( dot(N, L), 0.0), 32.0);
-            totalColor += lightColor * specularIntensity;
+            specular = lightColor * specularIntensity;
 
-            gl_FragColor = vec4(1.0, 0.0, 0.7, 1.0);
-            gl_FragColor = vec4(N, 1.0);
-            gl_FragColor = vec4(totalColor, 1.0);
+            totalColor = ambient + diffuse + specular;
+
+            vec3 positionTextureLightspace = 0.5 * positionProjectedLightspace.xyz / positionProjectedLightspace.w + vec3(0.5);
+            float depthFromLightTexture = decodeFloat(texture2D(lightDepth, positionTextureLightspace.xy));
+            
+            float lightFactor = 0.0;
+            if (depthFromLightTexture + 0.001 > positionTextureLightspace.z) {
+                lightFactor = 1.0;
+            }
+
+            vec3 shadedColor = ambient + (diffuse + specular) * lightFactor;
+
+            gl_FragColor = vec4(shadedColor, 1.0);
         }
     </script>
 
@@ -278,7 +321,7 @@
 
             var viewMatrix = mat4.create();
             // all
-            
+
 
             Draw(viewMatrix);
 
