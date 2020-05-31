@@ -276,7 +276,11 @@
 
             gl.enableVertexAttribArray(resources.programLight.vertexPositionAttribute);
 
-            // More rendering code...
+            var viewMatrix = mat4.create();
+            // all
+            
+
+            Draw(viewMatrix);
 
             gl.disableVertexAttribArray(resources.programLight.vertexPositionAttribute);
 
@@ -287,9 +291,10 @@
             gl.enable(gl.DEPTH_TEST);
 
             gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
-            gl.useProgram(resources.programCamera);
             gl.clearColor(0.0, 0.0, 0.0, 1.0);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+            gl.useProgram(resources.programCamera);
 
             // Projection
             var pMatrix = mat4.create();
@@ -305,6 +310,10 @@
             mat4.rotate(viewMatrix, camera.yaw, [0.0, 1.0, 0.0]);
             gl.uniformMatrix4fv(resources.programCamera.vMatrixUniform, false, viewMatrix);
 
+            Draw(viewMatrix);
+        }
+
+        function Draw(viewMatrix) {
             for (var i = 0; i < entities.length; ++i) {
                 var entity = entities[i];
 
