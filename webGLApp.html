@@ -155,6 +155,10 @@
             UP: 'up'
         };
         var lightPosition = [-1.0, 1.0, 1.0];
+        var lightProjection;
+        var lightView;
+        var rttFramebuffer = {};
+        var rttTexture = {};
 
         const PI = 3.14159265359;
         const TWOPI = PI * 2;
@@ -290,7 +294,7 @@
             rttFramebuffer.width = 2048;
             rttFramebuffer.height = 2048;
 
-            rttTexture = gl.CreateTexture();
+            rttTexture = gl.createTexture();
             gl.bindTexture(gl.TEXTURE_2D, rttTexture);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
@@ -319,19 +323,17 @@
             gl.enableVertexAttribArray(resources.programLight.vertexPositionAttribute);
 
             // Projection
-            var pMatrix = mat4.create();
-            mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, pMatrixLight);
-            gl.uniformMatrix4fv(resources.programLight.pMatrixUniform, false, pMatrixLight);
+            lightProjection = mat4.create();
+            mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, lightProjection);
+            gl.uniformMatrix4fv(resources.programLight.pMatrixUniform, false, lightProjection);
 
             // View
-            var viewMatrix = mat4.create();
-            mat4.identity(viewMatrix);
-            var lightPos = vec3.create(resources.programLight.position);
-            mat4.translate(viewMatrix, vec3.negate(lightPos));
-            mat4.rotate(viewMatrix, resources.programLight.vLightDir, [1.0, 1.0, 1.0]);
-            gl.uniformMatrix4fv(resources.programLight.vMatrixUniform, false, viewMatrix);
+            lightView = mat4.create();
+            mat4.identity(lightView);
+            mat4.translate(lightView, vec3.negate(lightPosition));
+            gl.uniformMatrix4fv(resources.programLight.vMatrixUniform, false, lightView);
 
-            Draw(viewMatrix);
+            Draw(lightView);
 
             gl.disableVertexAttribArray(resources.programLight.vertexPositionAttribute);
 
@@ -361,6 +363,9 @@
             mat4.rotate(viewMatrix, camera.pitch, [1.0, 0.0, 0.0]);
             mat4.rotate(viewMatrix, camera.yaw, [0.0, 1.0, 0.0]);
             gl.uniformMatrix4fv(resources.programCamera.vMatrixUniform, false, viewMatrix);
+
+            gl.uniformMatrix4fv(resources.programCamera.pMatrixLight, false, lightProjection);
+            gl.uniformMatrix4fv(resources.programCamera.mvMatrixLight, false, lightView);
 
             Draw(viewMatrix);
         }
@@ -524,7 +529,7 @@
 
             requestAnimationFrame(Update);
             processInputEvents();
-            //drawSceneFromLight();
+            drawSceneFromLight();
             drawSceneFromCamera();
         }
 
