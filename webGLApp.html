@@ -405,6 +405,14 @@
             entity.transform.scale = [1.5, 1.5, 1.5];
             entity.model = resources.modelLaptop;
             entities.push(entity);
+
+            entity = {};
+            entity.transform = {};
+            entity.transform.position = [0.0, -1.0, -5.0];
+            entity.transform.rotation = [0.0, 0.0, 0.0];
+            entity.transform.scale = [10.0, 0.1, 10.0];
+            entity.model = resources.modelLaptop;
+            entities.push(entity);
         }
 
         function initCamera() {
