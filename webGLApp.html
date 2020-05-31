@@ -51,12 +51,13 @@
         
         uniform mat4 modelViewMatrixLight;
         uniform mat4 projectionMatrixLight;
+        uniform vec3 lightPosition;
 
         varying vec4 positionProjectedLightspace;
 
         void main(void) {
 
-            vLightDir = mat3(uVMatrix) * vec3(-1.0, 1.0, 1.0);
+            vLightDir = mat3(uVMatrix) * lightPosition;
 
             vNormal = mat3(uMVMatrix) * aVertexNormal;
             gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
@@ -153,6 +154,7 @@
             PRESSED: 'pressed',
             UP: 'up'
         };
+        var lightPosition = [-1.0, 1.0, 1.0];
 
         const PI = 3.14159265359;
         const TWOPI = PI * 2;
@@ -229,6 +231,7 @@
             resources.programCamera.mvMatrixLight = gl.getUniformLocation(resources.programCamera, "modelViewMatrixLight");
             resources.programCamera.pMatrixLight = gl.getUniformLocation(resources.programCamera, "projectionMatrixLight");
             resources.programCamera.sampler2D = gl.getUniformLocation(resources.programCamera, "lightDepth");
+            resources.programCamera.lightPosition = gl.getUniformLocation(resources.programCamera, "lightPosition");
 
             resources.programLight = loadShader("light");
 
@@ -348,6 +351,7 @@
             var pMatrix = mat4.create();
             mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, pMatrix);
             gl.uniformMatrix4fv(resources.programCamera.pMatrixUniform, false, pMatrix);
+            gl.uniform3fv(resources.programCamera.lightPosition, lightPosition);
 
             // View
             var viewMatrix = mat4.create();
@@ -558,6 +562,7 @@
 
         function webGLStart() {
             initGL();
+            initTextureFramebuffer();
             initCamera();
             initTime();
             initInput();
