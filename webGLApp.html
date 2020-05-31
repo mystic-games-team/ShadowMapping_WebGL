@@ -148,7 +148,7 @@
             PRESSED: 'pressed',
             UP: 'up'
         };
-        var lightPosition = [0.0, 10.0, 4.0];
+        var lightPosition = [-3.0, 10.0, 4.0];
         var lightProjection = mat4.create();
         var lightView = mat4.create();
         var rttFramebuffer = {};
@@ -561,7 +561,7 @@
             entity.transform = {};
             entity.transform.position = [0.0, -1.0, 0.0];
             entity.transform.rotation = [0.0, PI, 0.0];
-            entity.transform.scale = [10.0, 10.0, 10.0];
+            entity.transform.scale = [8.0, 8.0, 8.0];
             entity.model = resources.floor;
             entities.push(entity);
         }
