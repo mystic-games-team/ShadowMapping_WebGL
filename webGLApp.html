@@ -236,8 +236,16 @@
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
             gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, rttFramebuffer.width, rttFramebuffer.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
 
+            var renderbuffer = gl.createRenderbuffer();
             gl.bindRenderbuffer(gl.RENDERBUFFER, renderbuffer);
             gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, rttFramebuffer.width, rttFramebuffer.height);
+
+            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, rttTexture, 0);
+            gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, renderbuffer);
+            
+            gl.bindTexture(gl.TEXTURE_2D, null);
+            gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         }
 
         function drawSceneFromLight() {
@@ -245,6 +253,14 @@
 
             gl.viewport(0, 0, rttFramebuffer.width, rttFramebuffer.height);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+            gl.useProgram(resources.programLight);
+
+            gl.enableVertexAttribArray(resources.programLight.vertexPositionAttribute);
+
+            // More rendering code...
+
+            gl.disableVertexAttribArray(resources.programLight.vertexPositionAttribute);
 
             gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         }
