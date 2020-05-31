@@ -13,11 +13,11 @@
 
         attribute vec3 aVertexPosition;
 
-        uniform mat4 modelViewMatrixLight;
+        uniform mat4 uMVMatrix;
         uniform mat4 projectionMatrixLight;
 
         void main(void) {
-            gl_Position = projectionMatrixLight * modelViewMatrixLight * vec4(aVertexPosition, 1.0);
+            gl_Position = projectionMatrixLight * uMVMatrix * vec4(aVertexPosition, 1.0);
         }
     </script>
 
@@ -154,9 +154,9 @@
             PRESSED: 'pressed',
             UP: 'up'
         };
-        var lightPosition = [-1.0, 1.0, 1.0];
-        var lightProjection;
-        var lightView;
+        var lightPosition = [0.0, 10.0, 4.0];
+        var lightProjection = mat4.create();
+        var lightView = mat4.create();
         var rttFramebuffer = {};
         var rttTexture = {};
 
@@ -242,7 +242,7 @@
             resources.programLight.vertexPositionAttribute = gl.getAttribLocation(resources.programLight, "aVertexPosition");
             gl.enableVertexAttribArray(resources.programLight.vertexPositionAttribute);
 
-            resources.programLight.mvMatrixLight = gl.getUniformLocation(resources.programLight, "modelViewMatrixLight");
+            resources.programLight.mvMatrixUniform = gl.getUniformLocation(resources.programLight, "uMVMatrix");
             resources.programLight.pMatrixLight = gl.getUniformLocation(resources.programLight, "projectionMatrixLight");
         }
 
@@ -325,15 +325,14 @@
             // Projection
             lightProjection = mat4.create();
             mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, lightProjection);
-            gl.uniformMatrix4fv(resources.programLight.pMatrixUniform, false, lightProjection);
+            gl.uniformMatrix4fv(resources.programLight.pMatrixLight, false, lightProjection);
 
             // View
             lightView = mat4.create();
             mat4.identity(lightView);
             mat4.translate(lightView, vec3.negate(lightPosition));
-            gl.uniformMatrix4fv(resources.programLight.vMatrixUniform, false, lightView);
 
-            Draw(lightView);
+            Draw(lightView, resources.programLight);
 
             gl.disableVertexAttribArray(resources.programLight.vertexPositionAttribute);
 
@@ -367,10 +366,10 @@
             gl.uniformMatrix4fv(resources.programCamera.pMatrixLight, false, lightProjection);
             gl.uniformMatrix4fv(resources.programCamera.mvMatrixLight, false, lightView);
 
-            Draw(viewMatrix);
+            Draw(viewMatrix, resources.programCamera);
         }
 
-        function Draw(viewMatrix) {
+        function Draw(viewMatrix, shader) {
             for (var i = 0; i < entities.length; ++i) {
                 var entity = entities[i];
 
@@ -403,7 +402,7 @@
 
                 // ModelView Matrix
                 var modelViewMatrix = mat4.multiply(viewMatrix, modelMatrix, mat4.create());
-                gl.uniformMatrix4fv(resources.programCamera.mvMatrixUniform, false, modelViewMatrix);
+                gl.uniformMatrix4fv(shader.mvMatrixUniform, false, modelViewMatrix);
 
                 gl.drawElements(gl.TRIANGLES, entity.model.indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
             }
