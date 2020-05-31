@@ -348,7 +348,7 @@
 
             // Projection
             var pMatrix = mat4.create();
-            mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, pMatrix);
+            mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 20.0, pMatrix);
             gl.uniformMatrix4fv(resources.programCamera.pMatrixUniform, false, pMatrix);
             gl.uniform3fv(resources.programCamera.lightPosition, lightPosition);
             gl.uniformMatrix4fv(resources.programCamera.uPMatrixLight, false, lightProjection);
