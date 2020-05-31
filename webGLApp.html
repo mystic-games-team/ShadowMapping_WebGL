@@ -330,7 +330,7 @@
             // View
             lightView = mat4.create();
             mat4.identity(lightView);
-            mat4.translate(lightView, vec3.negate(lightPosition));
+            mat4.translate(lightView, lightPosition);
 
             Draw(lightView, resources.programLight);
 
