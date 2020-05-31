@@ -230,7 +230,7 @@
             resources.programCamera.pMatrixLight = gl.getUniformLocation(resources.programCamera, "projectionMatrixLight");
             resources.programCamera.sampler2D = gl.getUniformLocation(resources.programCamera, "lightDepth");
 
-            resources.programLight = initShaders("light");
+            resources.programLight = loadShader("light");
 
             resources.programLight.vertexPositionAttribute = gl.getAttribLocation(resources.programLight, "aVertexPosition");
             gl.enableVertexAttribArray(resources.programLight.vertexPositionAttribute);
