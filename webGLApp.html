@@ -35,7 +35,7 @@
             gl_FragColor = encodeFloat(gl_FragCoord.z);
         }
     </script>
-    
+
     <script id="camera-vs" type="x-shader/x-vertex">
         attribute vec3 aVertexPosition;
         attribute vec3 aVertexNormal;
@@ -148,7 +148,7 @@
             PRESSED: 'pressed',
             UP: 'up'
         };
-        var lightPosition = [-3.0, 10.0, 4.0];
+        var lightPosition = [-1.0, 5.0, 4.0];
         var lightProjection = mat4.create();
         var lightView = mat4.create();
         var rttFramebuffer = {};
@@ -301,7 +301,7 @@
 
             gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, rttTexture, 0);
             gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, renderbuffer);
-            
+
             gl.bindTexture(gl.TEXTURE_2D, null);
             gl.bindRenderbuffer(gl.RENDERBUFFER, null);
             gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -327,7 +327,7 @@
             lightView = mat4.create();
             mat4.identity(lightView);
             mat4.translate(lightView, lightPosition);
-            lightView = mat4.lookAt(lightPosition, [0.0,0.0,0.0], [0.0,1.0,0.0], lightView);
+            lightView = mat4.lookAt(lightPosition, [0.0, 0.0, 0.0], [0.0, 1.0, 0.0], lightView);
 
             Draw(lightView, resources.programLight);
 
@@ -406,7 +406,7 @@
                 mat4.scale(modelMatrix, entity.transform.scale);
 
                 if (shader == resources.programCamera) {
-                    var modelviewMatrix= mat4.multiply(viewMatrix, modelMatrix, mat4.create());
+                    var modelviewMatrix = mat4.multiply(viewMatrix, modelMatrix, mat4.create());
                     gl.uniformMatrix4fv(resources.programCamera.mvMatrixUniform, false, modelviewMatrix);
                     gl.uniform3fv(resources.programCamera.color, entity.color);
                 }
@@ -563,7 +563,7 @@
 
             entity = {};
             entity.transform = {};
-            entity.transform.position = [0.0, -1.0, 0.0];
+            entity.transform.position = [0.0, 0.1, 0.0];
             entity.transform.rotation = [0.0, PI, 0.0];
             entity.transform.scale = [8.0, 8.0, 8.0];
             entity.color = vec3.create([0.3, 0.3, 1.0]);
@@ -572,9 +572,9 @@
         }
 
         function initCamera() {
-            camera.position = [0.0, 0.0, 15.0];
-            camera.yaw = HALFPI/2;
-            camera.pitch =HALFPI/4;
+            camera.position = [0.0, 0.0, 10.0];
+            camera.yaw = -HALFPI / 3;
+            camera.pitch = HALFPI / 4;
         }
 
         function webGLStart() {
