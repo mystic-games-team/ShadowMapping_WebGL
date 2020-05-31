@@ -215,32 +215,28 @@
         }
 
 
-        function initShaders(name) {
-            var fragmentShader = getShader(name + "-fs");
-            var vertexShader = getShader(name + "-vs");
+        function initShaders() {
+            resources.programCamera = loadShader("camera");
+            resources.programCamera.vertexPositionAttribute = gl.getAttribLocation(resources.programCamera, "aVertexPosition");
+            gl.enableVertexAttribArray(resources.programCamera.vertexPositionAttribute);
 
-            var shaderProgram = gl.createProgram();
-            gl.attachShader(shaderProgram, vertexShader);
-            gl.attachShader(shaderProgram, fragmentShader);
-            gl.linkProgram(shaderProgram);
+            resources.programCamera.vertexNormalAttribute = gl.getAttribLocation(resources.programCamera, "aVertexNormal");
+            gl.enableVertexAttribArray(resources.programCamera.vertexNormalAttribute);
 
-            if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-                alert("Could not initialise shaders");
-            }
+            resources.programCamera.pMatrixUniform = gl.getUniformLocation(resources.programCamera, "uPMatrix");
+            resources.programCamera.mvMatrixUniform = gl.getUniformLocation(resources.programCamera, "uMVMatrix");
+            resources.programCamera.vMatrixUniform = gl.getUniformLocation(resources.programCamera, "uVMatrix");
+            resources.programCamera.mvMatrixLight = gl.getUniformLocation(resources.programCamera, "modelViewMatrixLight");
+            resources.programCamera.pMatrixLight = gl.getUniformLocation(resources.programCamera, "projectionMatrixLight");
+            resources.programCamera.sampler2D = gl.getUniformLocation(resources.programCamera, "lightDepth");
 
-            gl.useProgram(shaderProgram);
+            resources.programLight = initShaders("light");
 
-            shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition");
-            gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
+            resources.programLight.vertexPositionAttribute = gl.getAttribLocation(resources.programLight, "aVertexPosition");
+            gl.enableVertexAttribArray(resources.programLight.vertexPositionAttribute);
 
-            shaderProgram.vertexNormalAttribute = gl.getAttribLocation(shaderProgram, "aVertexNormal");
-            gl.enableVertexAttribArray(shaderProgram.vertexNormalAttribute);
-
-            shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
-            shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
-            shaderProgram.vMatrixUniform = gl.getUniformLocation(shaderProgram, "uVMatrix");
-
-            return shaderProgram;
+            resources.programLight.mvMatrixLight = gl.getUniformLocation(resources.programLight, "modelViewMatrixLight");
+            resources.programLight.pMatrixLight = gl.getUniformLocation(resources.programLight, "projectionMatrixLight");
         }
 
         function loadModelOnGPU(model, modelData) {
@@ -456,6 +452,24 @@
             document.onwheel = handleMouseWheel;
         }
 
+        function loadShader(name) {
+            var fragmentShader = getShader(name + "-fs");
+            var vertexShader = getShader(name + "-vs");
+
+            var shaderProgram = gl.createProgram();
+            gl.attachShader(shaderProgram, vertexShader);
+            gl.attachShader(shaderProgram, fragmentShader);
+            gl.linkProgram(shaderProgram);
+
+            if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+                alert("Could not initialise shaders");
+            }
+
+            gl.useProgram(shaderProgram);
+
+            return shaderProgram;
+        }
+
         function processInputEvents() {
             var speed = 20.0;
 
@@ -547,8 +561,7 @@
             initCamera();
             initTime();
             initInput();
-            resources.programCamera = initShaders("camera");
-            resources.programLight = initShaders("light");
+            initShaders();
             InitModels();
             initScene();
 
