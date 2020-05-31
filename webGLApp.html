@@ -279,6 +279,7 @@
         function InitModels() {
             resources.modelTeapot = requestModel("Data/Teapot.json");
             resources.modelLaptop = requestModel("Data/Laptop.json");
+            resources.floor = requestModel("Data/Floor.json");
         }
 
         function initTextureFramebuffer() {
@@ -556,17 +557,17 @@
 
             entity = {};
             entity.transform = {};
-            entity.transform.position = [0.0, -5.0, 6.0];
-            entity.transform.rotation = [0.28, PI, 0.0];
+            entity.transform.position = [0.0, -1.0, 0.0];
+            entity.transform.rotation = [0.0, PI, 0.0];
             entity.transform.scale = [10.0, 10.0, 10.0];
-            entity.model = resources.modelLaptop;
+            entity.model = resources.floor;
             entities.push(entity);
         }
 
         function initCamera() {
-            camera.position = [0.0, 0.0, 10.0];
-            camera.yaw = 0.0;
-            camera.pitch = 0.0;
+            camera.position = [0.0, 0.0, 15.0];
+            camera.yaw = HALFPI/2;
+            camera.pitch =HALFPI/4;
         }
 
         function webGLStart() {
