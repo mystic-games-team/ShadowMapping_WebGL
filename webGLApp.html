@@ -22,7 +22,7 @@
 
         void main(void) {
 
-            vLightDir = mat3(uVMatrix) * vec3(-0.75, 1.0, 0.0);
+            vLightDir = mat3(uVMatrix) * vec3(-1.0, 1.0, 0.0);
 
             vNormal = mat3(uMVMatrix) * aVertexNormal;
             gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
