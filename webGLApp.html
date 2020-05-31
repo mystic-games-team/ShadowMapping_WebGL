@@ -316,6 +316,7 @@
             gl.bindFramebuffer(gl.FRAMEBUFFER, rttFramebuffer);
 
             gl.viewport(0, 0, rttFramebuffer.width, rttFramebuffer.height);
+            gl.clearColor(0.0, 0.0, 0.0, 1.0);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
             gl.useProgram(resources.programLight);
@@ -330,7 +331,7 @@
             // View
             lightView = mat4.create();
             mat4.identity(lightView);
-            mat4.translate(lightView, vec3.negate(lightPosition));
+            //mat4.translate(lightView, vec3.negate(lightPosition));
 
             Draw(lightView, resources.programLight);
 
@@ -366,7 +367,13 @@
             gl.uniformMatrix4fv(resources.programCamera.pMatrixLight, false, lightProjection);
             gl.uniformMatrix4fv(resources.programCamera.mvMatrixLight, false, lightView);
 
+            gl.activeTexture(gl.TEXTURE1);
+            gl.bindTexture(gl.TEXTURE_2D, rttTexture);
+            gl.uniform1i(resources.programCamera.sampler2D, 1);
+
             Draw(viewMatrix, resources.programCamera);
+
+            gl.bindTexture(gl.TEXTURE_2D, null);
         }
 
         function Draw(viewMatrix, shader) {
@@ -376,7 +383,7 @@
                 if (entity.model.indexBuffer == null) continue;
 
                 gl.bindBuffer(gl.ARRAY_BUFFER, entity.model.positionBuffer);
-                gl.vertexAttribPointer(resources.programCamera.vertexPositionAttribute,
+                gl.vertexAttribPointer(shader.vertexPositionAttribute,
                     entity.model.positionBuffer.itemSize,
                     gl.FLOAT,
                     false,
