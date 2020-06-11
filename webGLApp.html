@@ -103,7 +103,7 @@
 
             // Specular
             float specularIntensity = pow( max( dot(N, L), 0.0), 30.0);
-            specular = lightColor * specularIntensity;
+            // specular = lightColor * specularIntensity;
 
             vec3 positionTextureLightspace = 0.5 * positionProjectedLightspace.xyz / positionProjectedLightspace.w + vec3(0.5);
             float depthFromLightTexture = decodeFloat(texture2D(lightDepth, positionTextureLightspace.xy));
@@ -125,7 +125,39 @@
         var gl;
         var resources = {};
         var entities = [];
+        var cameras = [];
+        var current_camera = {};
+
+        const PI = 3.14159265359;
+        const TWOPI = PI * 2;
+        const HALFPI = PI * 0.5;
+
         var camera = {};
+        camera.position = [0.0, 0.0, 10.0];
+        camera.yaw = -HALFPI / 3;
+        camera.pitch = HALFPI / 4;
+        cameras.push(camera);
+
+        var camera = {};
+        camera.position = [-10.0, 0.0, 10.0];
+        camera.yaw = -HALFPI / 3;
+        camera.pitch = HALFPI / 4;
+        cameras.push(camera);
+
+        var camera = {};
+        camera.position = [0.0, 0.0, -10.0];
+        camera.yaw = -HALFPI / 3;
+        camera.pitch = HALFPI / 4;
+        cameras.push(camera);
+
+        var camera = {};
+        camera.position = [-10.0, 0.0, -10.0];
+        camera.yaw = -HALFPI / 3;
+        camera.pitch = HALFPI / 4;
+        cameras.push(camera);
+
+        current_camera = cameras[0];
+
         var input = {
             keys: [],
             mouseButtons: [],
@@ -139,7 +171,8 @@
 
         var time = {
             deltaSeconds: 1.0 / 60.0,
-            lastTimeMillis: 0
+            lastTimeMillis: 0,
+            timePassed: 0
         };
 
         const ButtonState = {
@@ -154,9 +187,6 @@
         var rttFramebuffer = {};
         var rttTexture = {};
 
-        const PI = 3.14159265359;
-        const TWOPI = PI * 2;
-        const HALFPI = PI * 0.5;
         function radians(deg) { return PI * deg / 180.0; }
         function degrees(rad) { return 180.0 * rad / PI; }
         function mod(value1, value2) { return value1 % value2; }
@@ -281,6 +311,10 @@
             resources.modelTeapot = requestModel("Data/Teapot.json");
             resources.modelLaptop = requestModel("Data/Laptop.json");
             resources.floor = requestModel("Data/Floor.json");
+            resources.sphere = requestModel("Data/Sphere.json");
+            resources.cone = requestModel("Data/Cone.json");
+            resources.cylinder = requestModel("Data/Cylinder.json");
+            resources.cube = requestModel("Data/Cube.json");
         }
 
         function initTextureFramebuffer() {
@@ -357,10 +391,10 @@
             // View
             var viewMatrix = mat4.create();
             mat4.identity(viewMatrix);
-            var camPos = vec3.create(camera.position);
+            var camPos = vec3.create(current_camera.position);
             mat4.translate(viewMatrix, vec3.negate(camPos));
-            mat4.rotate(viewMatrix, camera.pitch, [1.0, 0.0, 0.0]);
-            mat4.rotate(viewMatrix, camera.yaw, [0.0, 1.0, 0.0]);
+            mat4.rotate(viewMatrix, current_camera.pitch, [1.0, 0.0, 0.0]);
+            mat4.rotate(viewMatrix, current_camera.yaw, [0.0, 1.0, 0.0]);
             gl.uniformMatrix4fv(resources.programCamera.vMatrixUniform, false, viewMatrix);
 
             gl.activeTexture(gl.TEXTURE1);
@@ -451,7 +485,7 @@
         }
 
         function handleMouseWheel(event) {
-            camera.position[2] += event.deltaY * time.deltaSeconds;
+            current_camera.position[2] += event.deltaY * time.deltaSeconds;
         }
 
         function initInput() {
@@ -492,30 +526,43 @@
             var speed = 20.0;
 
             if (input.keys[87] == ButtonState.PRESSED) { // W
-                camera.position[2] -= speed * time.deltaSeconds;
+                current_camera.position[2] -= speed * time.deltaSeconds;
             }
             if (input.keys[83] == ButtonState.PRESSED) { // S
-                camera.position[2] += speed * time.deltaSeconds;
+                current_camera.position[2] += speed * time.deltaSeconds;
             }
             if (input.keys[65] == ButtonState.PRESSED) { // A
-                camera.position[0] -= speed * time.deltaSeconds;
+                current_camera.position[0] -= speed * time.deltaSeconds;
             }
             if (input.keys[68] == ButtonState.PRESSED) { // D
-                camera.position[0] += speed * time.deltaSeconds;
+                current_camera.position[0] += speed * time.deltaSeconds;
             }
             if (input.keys[82] == ButtonState.DOWN) { // R
                 initCamera();
             }
 
+            if (input.keys[49] == ButtonState.PRESSED || input.keys[97] == ButtonState.PRESSED) {
+                current_camera = cameras[0];
+            }
+            if (input.keys[50] == ButtonState.PRESSED || input.keys[98] == ButtonState.PRESSED) {
+                current_camera = cameras[1];
+            }
+            if (input.keys[51] == ButtonState.PRESSED || input.keys[99] == ButtonState.PRESSED) {
+                current_camera = cameras[2];
+            }
+            if (input.keys[52] == ButtonState.PRESSED || input.keys[100] == ButtonState.PRESSED) {
+                current_camera = cameras[3];
+            }
+
             if (input.mouseButtons[0] == ButtonState.PRESSED) {
-                camera.yaw += input.mousedx * 0.01;
-                camera.yaw = mod(camera.yaw, TWOPI);
-                camera.pitch += input.mousedy * 0.01;
-                camera.pitch = clamp(camera.pitch, -HALFPI, HALFPI);
+                current_camera.yaw += input.mousedx * 0.01;
+                current_camera.yaw = mod(current_camera.yaw, TWOPI);
+                current_camera.pitch += input.mousedy * 0.01;
+                current_camera.pitch = clamp(current_camera.pitch, -HALFPI, HALFPI);
             }
             if (input.mouseButtons[1] == ButtonState.PRESSED) {
-                camera.position[0] -= input.mousedx * time.deltaSeconds;
-                camera.position[1] += input.mousedy * time.deltaSeconds;
+                current_camera.position[0] -= input.mousedx * time.deltaSeconds;
+                current_camera.position[1] += input.mousedy * time.deltaSeconds;
             }
 
             for (var i = 0; i < 300; ++i) {
@@ -535,6 +582,9 @@
             var tm = date.getTime();
             time.deltaSeconds = (tm - time.lastTimeMillis) / 1000.0;
             time.lastTimeMillis = tm;
+            time.timePassed += time.deltaSeconds;
+
+            entities[0].transform.rotation = [HALFPI, -HALFPI / 2, time.timePassed];
 
             requestAnimationFrame(Update);
             processInputEvents();
@@ -543,38 +593,258 @@
         }
 
         function initScene() {
-            var entity = {};
+            //var entity = {};
+            //entity.transform = {};
+            //entity.transform.position = [-2.0, 0.865, 0.0];
+            //entity.transform.rotation = [0.0, 0.0, 0.0];
+            // entity.transform.scale = [0.1, 0.1, 0.1];
+            //entity.color = vec3.create([1.0, 0.0, 0.7]);
+            // entity.model = resources.modelTeapot;
+            // entities.push(entity);
+
+            // entity = {};
+            //entity.transform = {};
+            // entity.transform.position = [2.0, 0.075, 0.0];
+            //entity.transform.rotation = [-HALFPI, 0.0, 0.0];
+            //entity.transform.scale = [1.5, 1.5, 1.5];
+            // entity.color = vec3.create([1.0, 0.5, 0.2]);
+            // entity.model = resources.modelLaptop;
+            // entities.push(entity);
+
+            current_camera = cameras[0];
+
+            // Cheese
+            entity = {};
             entity.transform = {};
-            entity.transform.position = [-2.0, 0.865, 0.0];
-            entity.transform.rotation = [0.0, 0.0, 0.0];
-            entity.transform.scale = [0.1, 0.1, 0.1];
-            entity.color = vec3.create([1.0, 0.0, 0.7]);
-            entity.model = resources.modelTeapot;
+            entity.transform.position = [-2.0, 0.5, 2.0];
+            entity.transform.rotation = [HALFPI, -HALFPI / 2, 0];
+            entity.transform.scale = [0.8, 0.2, 0.8];
+            entity.color = vec3.create([1.0, 1.0, 0.0]);
+            entity.model = resources.cylinder;
+            entities.push(entity);
+
+            // Mouse body
+            entity = {};
+            entity.transform = {};
+            entity.transform.position = [-0.1, 0.3, 0.1];
+            entity.transform.rotation = [-HALFPI, -HALFPI / 2, 0.0];
+            entity.transform.scale = [0.3, 0.5, 0.25];
+            entity.color = vec3.create([0.4, 0.4, 0.4]);
+            entity.model = resources.sphere;
+            entities.push(entity);
+
+
+            // Mouse Head
+            entity = {};
+            entity.transform = {};
+            entity.transform.position = [-0.45, 0.3, 0.45];
+            entity.transform.rotation = [-HALFPI, -HALFPI / 2, 0.0];
+            entity.transform.scale = [0.23, 0.23, 0.23];
+            entity.color = vec3.create([0.4, 0.4, 0.4]);
+            entity.model = resources.sphere;
             entities.push(entity);
 
             entity = {};
             entity.transform = {};
-            entity.transform.position = [2.0, 0.075, 0.0];
-            entity.transform.rotation = [-HALFPI, 0.0, 0.0];
-            entity.transform.scale = [1.5, 1.5, 1.5];
-            entity.color = vec3.create([1.0, 0.5, 0.2]);
-            entity.model = resources.modelLaptop;
+            entity.transform.position = [-0.68, 0.27, 0.68];
+            entity.transform.rotation = [-HALFPI, -HALFPI / 2, PI];
+            entity.transform.scale = [0.15, 0.15, 0.1];
+            entity.color = vec3.create([0.4, 0.4, 0.4]);
+            entity.model = resources.cone;
             entities.push(entity);
 
+            entity = {};
+            entity.transform = {};
+            entity.transform.position = [-0.76, 0.27, 0.76];
+            entity.transform.rotation = [-HALFPI, -HALFPI / 2, PI];
+            entity.transform.scale = [0.05, 0.05, 0.05];
+            entity.color = vec3.create([1.0, 0.6, 0.8]);
+            entity.model = resources.sphere;
+            entities.push(entity);
+
+            entity = {};
+            entity.transform = {};
+            entity.transform.position = [-0.39, 0.53, 0.59];
+            entity.transform.rotation = [-HALFPI, -HALFPI / 2, PI];
+            entity.transform.scale = [0.28, 0.01, 0.28];
+            entity.color = vec3.create([0.4, 0.4, 0.4]);
+            entity.model = resources.cylinder;
+            entities.push(entity);
+
+            entity = {};
+            entity.transform = {};
+            entity.transform.position = [-0.4, 0.53, 0.6];
+            entity.transform.rotation = [-HALFPI, -HALFPI / 2, PI];
+            entity.transform.scale = [0.25, 0.01, 0.25];
+            entity.color = vec3.create([1.0, 0.6, 0.8]);
+            entity.model = resources.cylinder;
+            entities.push(entity);
+
+            entity = {};
+            entity.transform = {};
+            entity.transform.position = [-0.59, 0.53, 0.39];
+            entity.transform.rotation = [-HALFPI, -HALFPI / 2, PI];
+            entity.transform.scale = [0.28, 0.01, 0.28];
+            entity.color = vec3.create([0.4, 0.4, 0.4]);
+            entity.model = resources.cylinder;
+            entities.push(entity);
+
+
+            entity = {};
+            entity.transform = {};
+            entity.transform.position = [-0.6, 0.53, 0.4];
+            entity.transform.rotation = [-HALFPI, -HALFPI / 2, PI];
+            entity.transform.scale = [0.25, 0.01, 0.25];
+            entity.color = vec3.create([1.0, 0.6, 0.8]);
+            entity.model = resources.cylinder;
+            entities.push(entity);
+
+
+
+            // Paws
+            entity = {};
+            entity.transform = {};
+            entity.transform.position = [-0.17, 0.11, 0.4];
+            entity.transform.rotation = [-HALFPI, -HALFPI / 2, PI];
+            entity.transform.scale = [0.05, 0.1, 0.03];
+            entity.color = vec3.create([1.0, 0.6, 0.8]);
+            entity.model = resources.cube;
+            entities.push(entity);
+
+            entity = {};
+            entity.transform = {};
+            entity.transform.position = [0.0, 0.11, -0.2];
+            entity.transform.rotation = [-HALFPI, -HALFPI / 2, PI];
+            entity.transform.scale = [0.07, 0.1, 0.03];
+            entity.color = vec3.create([1.0, 0.6, 0.8]);
+            entity.model = resources.cube;
+            entities.push(entity);
+
+            entity = {};
+            entity.transform = {};
+            entity.transform.position = [0.2, 0.11, -0.0];
+            entity.transform.rotation = [-HALFPI, -HALFPI / 2, PI];
+            entity.transform.scale = [0.07, 0.1, 0.03];
+            entity.color = vec3.create([1.0, 0.6, 0.8]);
+            entity.model = resources.cube;
+            entities.push(entity);
+
+            entity = {};
+            entity.transform = {};
+            entity.transform.position = [-0.4, 0.11, 0.15];
+            entity.transform.rotation = [-HALFPI, -HALFPI / 2, PI];
+            entity.transform.scale = [0.05, 0.1, 0.03];
+            entity.color = vec3.create([1.0, 0.6, 0.8]);
+            entity.model = resources.cube;
+            entities.push(entity);
+
+            // Tail
+            entity = {};
+            entity.transform = {};
+            entity.transform.position = [0.4, 0.27, -0.4];
+            entity.transform.rotation = [-1.7, -HALFPI / 2, 0];
+            entity.transform.scale = [0.07, 0.6, 0.07];
+            entity.color = vec3.create([1.0, 0.6, 0.8]);
+            entity.model = resources.cone;
+            entities.push(entity);
+
+            // Tree
+            entity = {};
+            entity.transform = {};
+            entity.transform.position = [3, 0.27, 0];
+            entity.transform.rotation = [0, -HALFPI / 2, 0];
+            entity.transform.scale = [0.07, 0.3, 0.07];
+            entity.color = vec3.create([0.4, 0.2, 0.0]);
+            entity.model = resources.cylinder;
+            entities.push(entity);
+            entity = {};
+            entity.transform = {};
+            entity.transform.position = [3, 1, 0];
+            entity.transform.rotation = [0, -HALFPI / 2, 0];
+            entity.transform.scale = [0.3, 0.6, 0.3];
+            entity.color = vec3.create([0.0, 0.2, 0.0]);
+            entity.model = resources.cone;
+            entities.push(entity);
+
+            entity = {};
+            entity.transform = {};
+            entity.transform.position = [3, 0.27, 3];
+            entity.transform.rotation = [0, -HALFPI / 2, 0];
+            entity.transform.scale = [0.07, 0.3, 0.07];
+            entity.color = vec3.create([0.4, 0.2, 0.0]);
+            entity.model = resources.cylinder;
+            entities.push(entity);
+            entity = {};
+            entity.transform = {};
+            entity.transform.position = [3, 1, 3];
+            entity.transform.rotation = [0, -HALFPI / 2, 0];
+            entity.transform.scale = [0.3, 0.6, 0.3];
+            entity.color = vec3.create([0.0, 0.2, 0.0]);
+            entity.model = resources.cone;
+            entities.push(entity);
+
+            entity = {};
+            entity.transform = {};
+            entity.transform.position = [-3, 0.27, 1];
+            entity.transform.rotation = [0, -HALFPI / 2, 0];
+            entity.transform.scale = [0.07, 0.3, 0.07];
+            entity.color = vec3.create([0.4, 0.2, 0.0]);
+            entity.model = resources.cylinder;
+            entities.push(entity);
+            entity = {};
+            entity.transform = {};
+            entity.transform.position = [-3, 1, 1];
+            entity.transform.rotation = [0, -HALFPI / 2, 0];
+            entity.transform.scale = [0.3, 0.6, 0.3];
+            entity.color = vec3.create([0.0, 0.2, 0.0]);
+            entity.model = resources.cone;
+            entities.push(entity);
+
+            entity = {};
+            entity.transform = {};
+            entity.transform.position = [0, 0.27, -3];
+            entity.transform.rotation = [0, -HALFPI / 2, 0];
+            entity.transform.scale = [0.07, 0.3, 0.07];
+            entity.color = vec3.create([0.4, 0.2, 0.0]);
+            entity.model = resources.cylinder;
+            entities.push(entity);
+            entity = {};
+            entity.transform = {};
+            entity.transform.position = [0, 1, -3];
+            entity.transform.rotation = [0, -HALFPI / 2, 0];
+            entity.transform.scale = [0.3, 0.6, 0.3];
+            entity.color = vec3.create([0.0, 0.2, 0.0]);
+            entity.model = resources.cone;
+            entities.push(entity);
+
+
+            // Plane
             entity = {};
             entity.transform = {};
             entity.transform.position = [0.0, 0.075, 0.0];
             entity.transform.rotation = [0.0, PI, 0.0];
             entity.transform.scale = [8.0, 8.0, 8.0];
-            entity.color = vec3.create([0.3, 0.3, 1.0]);
+            entity.color = vec3.create([0.4, 1, 0.4]);
             entity.model = resources.floor;
             entities.push(entity);
         }
 
         function initCamera() {
-            camera.position = [0.0, 0.0, 10.0];
-            camera.yaw = -HALFPI / 3;
-            camera.pitch = HALFPI / 4;
+            cameras[0].position = [0.0, 0.0, 10.0];
+            cameras[0].yaw = -HALFPI / 3;
+            cameras[0].pitch = HALFPI / 4;
+
+            cameras[1].position = [0.0, 0.0, 10.0];
+            cameras[1].yaw = HALFPI / 3;
+            cameras[1].pitch = HALFPI / 4;
+
+            cameras[2].position = [0.0, 0.0, 10.0];
+            cameras[2].yaw = 2 * HALFPI / 3;
+            cameras[2].pitch = HALFPI / 4;
+
+            cameras[3].position = [0.0, 0.0, 10.0];
+            cameras[3].yaw = -2 * HALFPI / 3;
+            cameras[3].pitch = HALFPI / 4;
         }
 
         function webGLStart() {
